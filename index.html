@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Badminton Split</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#f5f6f4;--card:#fff;--tx:#17201a;--mu:#6b756e;--ac:#1a9c5b;--bd:#e1e5e0}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#101412;--card:#1a201c;--tx:#eef2ee;--mu:#93a096;--ac:#3ad287;--bd:#2a332d}}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.4 -apple-system,system-ui,Helvetica,Arial,sans-serif;padding:14px;max-width:560px;margin:auto}
+h1{font-size:22px;margin:6px 0 12px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:12px;margin-bottom:12px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+label{font-size:12px;color:var(--mu);display:block;margin-bottom:3px}
+input[type=time],input[type=date],input[type=email],input[type=password],input[type=number],input[type=text],textarea{width:100%;font-size:16px;padding:9px;border:1px solid var(--bd);border-radius:10px;background:var(--bg);color:var(--tx)}
+textarea{min-height:80px}
+button{font-size:15px;padding:10px 14px;border-radius:10px;border:0;background:var(--ac);color:#fff;font-weight:600}
+button.g{background:var(--bg);color:var(--tx);border:1px solid var(--bd)}
+.row{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.p{border-top:1px solid var(--bd);padding:10px 0}.p:first-child{border:0}
+.ph{display:flex;justify-content:space-between;align-items:center;font-weight:600}
+.x{background:none;color:var(--mu);padding:2px 8px;font-size:20px}
+.sl{display:grid;grid-template-columns:44px 1fr 62px;align-items:center;gap:8px;font-size:13px;color:var(--mu)}
+.sl b{color:var(--tx);text-align:right}select{font-size:16px;padding:7px;border:1px solid var(--bd);border-radius:10px;background:var(--bg);color:var(--tx);width:100%}
+input[type=range]{width:100%;accent-color:var(--ac)}
+.owe{font-size:13px;color:var(--mu);margin-top:2px}.owe b{color:var(--ac);font-size:18px}
+.bd{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--mu);margin:6px 0}.cr{display:grid;grid-template-columns:58px 1fr 1fr 28px;gap:6px;align-items:center;margin-top:6px;font-size:14px}.tot{font-size:14px;color:var(--mu)}.tot b{color:var(--tx)}a.btn{display:inline-block;font-size:15px;padding:10px 14px;border-radius:10px;background:var(--ac);color:#fff;font-weight:600;text-decoration:none}a.btn.g{background:var(--bg);color:var(--tx);border:1px solid var(--bd)}.chip{font-size:12px;padding:2px 8px;border-radius:99px;border:1px solid var(--bd)}.pl{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--bd);font-size:14px}.pl:first-child{border:0}.warn{color:#c0392b}
+</style></head><body>
+<div id="pubv" style="display:none"></div>
+<div id="org">
+<h1>🏸 Badminton Split</h1>
+<div id="auth" class="card"></div>
+<div class="card"><div class="grid">
+<div><label>Game start</label><input type="time" id="gs" value="07:30"></div>
+<div><label>Game end</label><input type="time" id="ge" value="09:00"></div>
+<div><label>Court ₹ / hour</label><input type="number" id="rate" value="300" inputmode="decimal"></div>
+<div><label>Shuttle ₹</label><div style="display:flex;gap:6px"><input type="number" id="shut" value="600" inputmode="decimal"><select id="sm" style="width:112px"><option value="t">Total</option><option value="p">Per person</option></select></div></div>
+<div style="grid-column:1/-1"><label>Your UPI number (added to copied messages)</label><input type="text" id="upi" inputmode="tel" placeholder="98xxxxxxxx"></div>
+
+</div></div>
+<div class="card"><label>Courts (set each court’s own time)</label><div id="cl"></div><div class="row"><button class="g" id="ac">+ Add court</button></div></div>
+<div class="card"><label>Paste player names (one per line, from Playo)</label>
+<textarea id="names" placeholder="Rahul&#10;Priya&#10;Arjun"></textarea>
+<div class="row"><button id="add">Add players</button><button class="g" id="clr">Clear all</button></div></div>
+<div id="list" class="card" style="display:none"></div>
+<div id="res" class="card" style="display:none"></div>
+<div id="pb" class="card"><label>Publish for payment collection</label>
+<div class="grid"><div style="grid-column:1/-1"><label>Title</label><input type="text" id="ttl" placeholder="Badminton - Sat morning"></div>
+<div><label>Date</label><input type="date" id="sdt"></div><div><label>Payee name</label><input type="text" id="pyn"></div>
+<div style="grid-column:1/-1"><label>UPI ID (for the Pay button)</label><input type="text" id="upiid" placeholder="name@okaxis" autocapitalize="none"></div></div>
+<div class="row"><button id="pub1">Create Collection / Publish</button></div><div class="owe" id="pmsg"></div></div>
+<div id="dash" class="card" style="display:none"></div>
+<div id="mine" class="card" style="display:none"></div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+const SB_URL='https://tqofupsimvhozxhikyai.supabase.co',SB_KEY='sb_publishable_ugdM5Zj19w3R_JW8EgFd_g_vvhVl0sm';
+const SB=window.supabase?window.supabase.createClient(SB_URL,SB_KEY):null;
+const TOKEN=new URLSearchParams(location.search).get('c');
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+let CID=null,TK=null,CST='open',PAY=[],USER=null,LASTPAY='';
+const tm=s=>{const[a,b]=s.split(':').map(Number);return a*60+b};
+const fmt=m=>{m=Math.round(m);let h=Math.floor(m/60)%24,mi=m%60,ap=h>=12?'PM':'AM';h=h%12||12;return h+':'+String(mi).padStart(2,'0')+' '+ap};
+let P=[],DET=false,C=[{s:450,e:540}],pg=450,pe=540;const hm=m=>String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');
+const gs=()=>tm($('gs').value||'07:30'),ge=()=>tm($('ge').value||'09:00');
+function build(){
+ const L=$('list');L.style.display=P.length?'block':'none';
+ const lo=Math.min(gs(),...C.map(k=>k.s))-30,hi=Math.max(ge(),...C.map(k=>k.e))+120;
+ L.innerHTML=P.map((p,i)=>`<div class="p"><div class="ph"><span>${p.n.replace(/</g,'&lt;')}</span><button class="x" data-r="${i}">×</button></div>
+ <div class="sl"><span>Court</span><select data-c="${i}">${['Any court',...C.map((_,j)=>'Court '+(j+1))].map((o,j)=>`<option value="${j}" ${(p.c||0)==j?'selected':''}>${o}</option>`).join('')}</select><b></b></div>
+ <label class="bd"><input type="checkbox" data-d2="${i}" ${p.d?'checked':''}> Show breakdown in summary</label>
+ <label class="bd"><input type="checkbox" data-pd="${i}" ${p.pd?'checked':''}> <b style="color:var(--ac)">Paid</b></label>
+ <div class="sl"><span>In</span><input type="range" min="${lo}" max="${hi}" step="5" value="${p.s}" data-i="${i}" data-k="s"><b id="s${i}"></b></div>
+ <div class="sl"><span>Out</span><input type="range" min="${lo}" max="${hi}" step="5" value="${p.e}" data-i="${i}" data-k="e"><b id="e${i}"></b></div>
+ <div class="owe" id="o${i}"></div></div>`).join('');
+ L.querySelectorAll('input').forEach(r=>r.oninput=()=>{const p=P[r.dataset.i];p[r.dataset.k]=+r.value;if(p.e<=p.s){if(r.dataset.k=='s')p.e=p.s+5;else p.s=p.e-5;build();return}calc()});
+ L.querySelectorAll('[data-pd]').forEach(x=>x.onchange=()=>setPaid(+x.dataset.pd,x.checked));
+ L.querySelectorAll('[data-d2]').forEach(x=>x.onchange=()=>{P[x.dataset.d2].d=x.checked;calc()});
+ L.querySelectorAll('select').forEach(s=>s.onchange=()=>{P[s.dataset.c].c=+s.value;calc()});
+ L.querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>{const p=P[+b.dataset.r];if(p.uid&&PAY.some(x=>x.player_id==p.uid&&x.status!='rejected')){alert('This player has a payment record. Reject it first.');return}P.splice(+b.dataset.r,1);build()});
+ calc();
+}
+function save(){if(TOKEN)return;try{localStorage.setItem('bs1',JSON.stringify({P,C,pg,pe,f:{gs:$('gs').value,ge:$('ge').value,rate:$('rate').value,shut:$('shut').value,sm:$('sm').value,upi:$('upi').value,ttl:$('ttl').value,sdt:$('sdt').value,pyn:$('pyn').value,upiid:$('upiid').value},cid:CID,tk:TK}))}catch(e){}}
+function calc(){save();
+ const R=$('res');R.style.display=P.length?'block':'none';if(!P.length)return;
+ const rate=+$('rate').value||0,shIn=+$('shut').value||0,sh=$('sm').value=='t'?Math.ceil(shIn/(P.length||1)):shIn;
+ const a=Math.min(gs(),...C.map(k=>k.s),...P.map(p=>p.s)),b=Math.max(ge(),...C.map(k=>k.e),...P.map(p=>p.e));
+ const c=P.map(()=>0);let court=0;const mins=C.reduce((x,k)=>x+k.e-k.s,0);
+ for(let t=a;t<b;t+=5){const nA=C.filter(k=>k.s<=t&&t<k.e).length,cost=rate/60*5*nA;court+=cost;const on=P.map((p,i)=>p.s<=t&&t<p.e?i:-1).filter(i=>i>=0);
+  {const pc=rate/60*5;let pool=0;C.forEach((k,ci)=>{if(!(k.s<=t&&t<k.e))return;const who=on.filter(i=>P[i].c==ci+1);if(who.length)who.forEach(i=>c[i]+=pc/who.length);else pool+=pc});if(pool){let r=on.filter(i=>!P[i].c);if(!r.length)r=on;if(!r.length)r=P.map((_,i)=>i);r.forEach(i=>c[i]+=pool/r.length)}}}
+ let paid=0,pend=[],sum=0,txt=`🏸 Badminton ${fmt(gs())}–${fmt(ge())}${C.length>1?` (${C.length} courts)`:''}\n`;
+ P.forEach((p,i)=>{$('s'+i).textContent=fmt(p.s);$('e'+i).textContent=fmt(p.e);
+  const tot=Math.ceil(c[i]+sh);p.amt=tot;sum+=tot;if(p.pd)paid+=tot;else pend.push(`${p.n}: ₹${tot}`);
+  const ct=tot-sh;$('o'+i).innerHTML=`Court ₹${ct} + Shuttle ₹${sh} → <b>₹${tot}</b>${p.pd?' ✅ paid':''}`;
+  txt+=p.d?`${p.n}: ₹${tot} (court ₹${ct}${p.c?` on Court ${p.c}`:''} for ${fmt(p.s)}–${fmt(p.e)} with ${P.filter(q=>q.s==p.s&&q.e==p.e&&q.c==p.c).length} player(s) + shuttle ₹${sh})\n`:`${p.n}: ₹${tot}\n`});
+ 
+ R.innerHTML=`<div class="tot">Court <b>₹${court.toFixed(0)}</b> (${(mins/60).toFixed(2)} court-hrs, ${C.length} court${C.length>1?'s':''}) · Shuttles <b>₹${sh*P.length}</b><br>To collect: <b style="font-size:20px">₹${sum}</b> from ${P.length} players<br>Paid <b>₹${paid}</b> · Pending <b>₹${sum-paid}</b> (${pend.length} left)</div><label style="margin-top:10px;display:flex;gap:8px;align-items:center;font-size:14px;color:var(--tx)"><input type="checkbox" id="det" ${P.every(p=>p.d)?'checked':''}> Breakdown for everyone</label><div class="row"><button id="cp">Copy summary</button><button class="g" id="cp2">Copy explanation</button><button class="g" id="cp3">Copy pending</button><button class="g" id="full">Everyone full game</button></div>`;
+ $('det').onchange=()=>{P.forEach(p=>p.d=$('det').checked);build()};$('cp2').onclick=async()=>{const x=ex(c,sh,rate,court,mins);try{await navigator.clipboard.writeText(x);$('cp2').textContent='Copied ✓'}catch(e){prompt('Copy:',x)}};$('cp3').onclick=async()=>{const x=(pend.length?`Pending payments 🏸\n${pend.join('\n')}`:'All paid ✅')+($('upi').value?`\nPay to: ${$('upi').value}`:'');try{await navigator.clipboard.writeText(x);$('cp3').textContent='Copied ✓'}catch(e){prompt('Copy:',x)}};$('cp').onclick=async()=>{try{await navigator.clipboard.writeText(txt+($('upi').value?'\nPay to: '+$('upi').value:''));$('cp').textContent='Copied ✓'}catch(e){prompt('Copy:',txt)}};
+ $('full').onclick=()=>{P.forEach(p=>{p.s=gs();p.e=ge()});build()};
+}
+$('add').onclick=()=>{$('names').value.split('\n').map(s=>s.trim()).filter(Boolean).forEach(n=>{if(!P.some(p=>p.n.toLowerCase()==n.toLowerCase()))P.push({n,s:gs(),e:ge(),c:0,d:false,pd:false})});$('names').value='';build()};
+$('clr').onclick=()=>{if(CID&&!confirm('Start a new game? The published collection stays online.'))return;P=[];CID=null;TK=null;PAY=[];build();renderDash()};
+['gs','ge'].forEach(id=>$(id).onchange=()=>{C.forEach(k=>{if(k.s==pg)k.s=gs();if(k.e==pe)k.e=ge();if(k.e<=k.s)k.e=k.s+60});pg=gs();pe=ge();rc();P.forEach(p=>{p.s=Math.max(p.s,gs()-30);p.e=Math.max(p.e,p.s+5)});build()});
+function ex(c,sh,rate,court,mins){
+ const g={};
+ P.forEach((p,i)=>{const k=p.s+'-'+p.e;(g[k]=g[k]||{s:p.s,e:p.e,m:[],cs:new Set()}).m.push(i);if(p.c)g[k].cs.add(p.c)});
+ let t=`🏸 Game breakdown (${fmt(gs())}–${fmt(ge())})\n`;
+ Object.values(g).sort((x,y)=>x.s-y.s||x.e-y.e).forEach(r=>{const n=r.m.length,tc=r.m.reduce((x,i)=>x+c[i],0),cs=[...r.cs].sort((a,b)=>a-b).map(x=>'Court '+x).join(' and ');
+  t+=`• ${n} player${n>1?'s':''} played ${fmt(r.s)}–${fmt(r.e)}${cs?' on '+cs:''} (court ₹${Math.round(tc)} shared among them)\n`});
+ return t+`\nCourt: ₹${rate}/hr × ${(mins/60).toFixed(2)} court-hrs = ₹${Math.round(court)}\nShuttle: ₹${sh} per person × ${P.length} players = ₹${sh*P.length}`}
+function rc(){const L=$('cl');L.innerHTML=C.map((k,i)=>`<div class="cr"><span>Court ${i+1}</span><input type="time" data-i="${i}" data-k="s" value="${hm(k.s)}"><input type="time" data-i="${i}" data-k="e" value="${hm(k.e)}">${C.length>1?`<button class="x" data-d="${i}">×</button>`:'<span></span>'}</div>`).join('');
+ L.querySelectorAll('input').forEach(x=>x.onchange=()=>{const k=C[x.dataset.i];k[x.dataset.k]=tm(x.value||'00:00');if(k.e<=k.s)k.e=k.s+60;rc();build()});
+ L.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>{const d=+b.dataset.d;C.splice(d,1);P.forEach(p=>{if(p.c==d+1)p.c=0;else if(p.c>d+1)p.c--});rc();build()})}
+$('ac').onclick=()=>{C.push({s:gs(),e:ge()});rc();build()};try{const d=JSON.parse(localStorage.getItem('bs1')||'null');if(d){P=d.P||[];C=d.C||C;pg=d.pg;pe=d.pe;CID=d.cid||null;TK=d.tk||null;if(d.f&&!d.f.sm)delete d.f.shut;Object.entries(d.f||{}).forEach(([k,v])=>{if($(k)&&v!=null)$(k).value=v})}}catch(e){}rc();build();
+['rate','shut','upi','sm','ttl','sdt','pyn','upiid'].forEach(id=>$(id).oninput=calc);
+
+const link=()=>location.origin+location.pathname+'?c='+TK;
+const msg=(id,t,bad)=>{const e=$(id);if(e){e.textContent=t;e.className='owe'+(bad?' warn':'')}};
+const cp=async(t,b)=>{try{await navigator.clipboard.writeText(t);if(b)b.textContent='Copied ✓'}catch(e){prompt('Copy:',t)}};
+function renderAuth(){const A=$('auth');
+ if(!SB){A.innerHTML='<div class="owe warn">Cloud features unavailable (offline). The calculator still works.</div>';return}
+ if(USER){A.innerHTML=`<div class="ph"><span style="font-size:14px">Organizer: ${esc(USER.email)}</span><button class="g" id="so">Sign out</button></div>`;$('so').onclick=()=>SB.auth.signOut()}
+ else{A.innerHTML=`<label>Organizer login (needed to publish)</label><div class="grid"><input type="email" id="em" placeholder="email" autocomplete="username" autocapitalize="none"><input type="password" id="pw" placeholder="password" autocomplete="current-password"></div><div class="row"><button id="si">Sign in</button></div><div class="owe" id="amsg"></div>`;
+  $('si').onclick=async()=>{const {error}=await SB.auth.signInWithPassword({email:$('em').value.trim(),password:$('pw').value});if(error)msg('amsg',error.message,1)}}}
+async function loadPay(force){if(!SB||!USER||!CID)return;
+ if(force){const {data:c}=await SB.from('collections').select('status').eq('id',CID).single();if(c)CST=c.status}
+ const {data,error}=await SB.from('payments').select('*, players!inner(collection_id)').eq('players.collection_id',CID);if(error)return;
+ const j=JSON.stringify(data);if(j===LASTPAY&&!force)return;LASTPAY=j;PAY=data||[];
+ P.forEach(p=>{p.pd=!!p.uid&&PAY.some(x=>x.player_id==p.uid&&x.status=='verified')});build();renderDash()}
+async function setPaid(i,v){const p=P[i];if(!SB||!USER||!CID||!p.uid){p.pd=v;calc();return}
+ if(v&&p.amt<=0){alert('This player has no amount due.');p.pd=false;calc();return}
+ const ex=PAY.find(x=>x.player_id==p.uid&&(x.status=='pending'||x.status=='verified'));let r;const now=new Date().toISOString();
+ if(v)r=ex?await SB.from('payments').update({status:'verified',verified_at:now}).eq('id',ex.id):await SB.from('payments').insert({player_id:p.uid,amount:p.amt,method:'upi',status:'verified',source:'organizer',verified_at:now});
+ else if(ex)r=await SB.from('payments').update({status:'rejected'}).eq('id',ex.id);
+ if(r&&r.error)alert(r.error.message);await loadPay(true)}
+async function review(id,ok){const r=await SB.from('payments').update({status:ok?'verified':'rejected',verified_at:ok?new Date().toISOString():null}).eq('id',id);if(r.error)alert(r.error.message);await loadPay(true)}
+function renderDash(){const D=$('dash');if(!CID||!USER||!TK){D.style.display='none';return}D.style.display='block';
+ const st=p=>{const x=PAY.filter(y=>y.player_id==p.uid);return x.some(y=>y.status=='verified')?'paid':x.some(y=>y.status=='pending')?'submitted':'unpaid'};
+ let exp=0,col=0,np=0;P.forEach(p=>{exp+=p.amt||0;if(st(p)=='paid'){col+=p.amt||0;np++}});
+ D.innerHTML=`<label>Payment tracker${CST=='closed'?' · CLOSED':''}</label><div class="tot">Players <b>${P.length}</b> · Expected <b>₹${exp}</b><br>Collected <b>₹${col}</b> · Pending <b>₹${exp-col}</b><br>Paid <b>${np}</b> · Pending <b>${P.length-np}</b></div><div class="owe" style="word-break:break-all">${esc(link())}</div><div class="row"><button id="cl">Copy link</button><button class="g" id="cr">Copy pending reminder</button><button class="g" id="rf">Refresh</button><button class="g" id="cs">${CST=='closed'?'Reopen':'Close'}</button></div>`+
+ P.map(p=>{const pe=PAY.find(y=>y.player_id==p.uid&&y.status=='pending'),s=st(p);return `<div class="pl"><span>${esc(p.n)} · ₹${p.amt||0}</span><span>${s=='paid'?'<span class="chip">✅ Paid</span>':s=='submitted'?`<span class="chip">⏳ ${esc(pe.transaction_reference||'')}</span> <button data-v="${pe.id}">Verify</button> <button class="g" data-j="${pe.id}">Reject</button>`:'<span class="chip">Unpaid</span>'}</span></div>`}).join('');
+ $('cl').onclick=e=>cp(link(),e.target);$('rf').onclick=()=>loadPay(true);
+ $('cr').onclick=e=>{const u=P.filter(p=>st(p)=='unpaid');cp((u.length?`Pending payments - ${$('ttl').value||'Badminton'}\n${u.map(p=>`${p.n}: ₹${p.amt}`).join('\n')}\nPay here: ${link()}`:'All paid ✅'),e.target)};
+ $('cs').onclick=async()=>{const n=CST=='closed'?'open':'closed';const r=await SB.from('collections').update({status:n}).eq('id',CID);if(r.error)alert(r.error.message);else{CST=n;renderDash()}};
+ D.querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>review(b.dataset.v,true));D.querySelectorAll('[data-j]').forEach(b=>b.onclick=()=>review(b.dataset.j,false))}
+async function renderMine(){const M=$('mine');if(!USER){M.style.display='none';return}
+ const {data}=await SB.from('collections').select('id,title,game_date,status').order('created_at',{ascending:false}).limit(20);
+ M.style.display='block';M.innerHTML='<label>My collections</label>'+((data||[]).map(c=>`<div class="pl"><span>${esc(c.title)}<br><span class="owe">${esc(c.game_date||'')} · ${esc(c.status)}</span></span><span><button class="g" data-o="${c.id}">Open</button> <button class="g" data-x="${c.id}">🗑</button></span></div>`).join('')||'<div class="owe">None yet</div>');
+ M.querySelectorAll('[data-o]').forEach(b=>b.onclick=()=>openCol(b.dataset.o));
+ M.querySelectorAll('[data-x]').forEach(b=>b.onclick=async()=>{if(!confirm('Delete this collection and all its payment records?'))return;const {error}=await SB.from('collections').delete().eq('id',b.dataset.x);if(error)return alert(error.message);if(b.dataset.x==CID){CID=null;TK=null;PAY=[];P.forEach(p=>{delete p.uid;p.pd=false});build()}renderMine();renderDash()})}
+async function openCol(id){const {data:c,error}=await SB.from('collections').select('*').eq('id',id).single();if(error)return alert(error.message);
+ const {data:pl}=await SB.from('players').select('*').eq('collection_id',id).order('sort');
+ CID=c.id;TK=c.public_token;CST=c.status;const st=c.settings||{};C=st.C||C;pg=st.pg;pe=st.pe;Object.entries(st.f||{}).forEach(([k,v])=>{if($(k)&&v!=null)$(k).value=v});
+ $('ttl').value=c.title||'';$('sdt').value=c.game_date||'';$('pyn').value=c.payee_name||'';$('upiid').value=c.upi_id||'';
+ P=(pl||[]).map(r=>{const m=r.meta||{};return {uid:r.id,n:r.name,amt:r.amount_due,s:m.s!=null?m.s:gs(),e:m.e!=null?m.e:ge(),c:m.c||0,d:false,pd:false}});
+ rc();await loadPay(true);window.scrollTo(0,0)}
+async function publish(){
+ if(!SB||!USER)return msg('pmsg','Sign in first.',1);if(!P.length)return msg('pmsg','Add players first.',1);
+ calc();const upiid=$('upiid').value.trim();
+ if(!/^[\w.\-]{2,}@[A-Za-z]{2,}$/.test(upiid))return msg('pmsg','Enter a valid UPI ID like name@okaxis',1);
+ const date=$('sdt').value||new Date().toISOString().slice(0,10),title=$('ttl').value.trim()||'Badminton '+date;
+ const row={owner_id:USER.id,title,game_date:date,start_time:$('gs').value||null,end_time:$('ge').value||null,upi_id:upiid,payee_name:$('pyn').value.trim()||null,settings:{C,pg,pe,f:{gs:$('gs').value,ge:$('ge').value,rate:$('rate').value,shut:$('shut').value,sm:$('sm').value}}};
+ $('pub1').disabled=true;msg('pmsg','Publishing…');
+ try{
+  const r=CID?await SB.from('collections').update(row).eq('id',CID).select().single():await SB.from('collections').insert({...row,public_token:crypto.randomUUID(),status:'open'}).select().single();
+  if(r.error)throw r.error;CID=r.data.id;TK=r.data.public_token;CST=r.data.status;
+  const {data:activePayments,error:activeErr}=await SB.from('payments').select('player_id,amount,status,players!inner(collection_id)').eq('players.collection_id',CID).in('status',['pending','verified']);
+  if(activeErr)throw activeErr;
+  for(const p of P){if(!p.uid)continue;const active=(activePayments||[]).find(x=>x.player_id===p.uid);if(active&&Number(active.amount)!==Number(p.amt))throw new Error(`Cannot change ${p.n}'s amount while a payment is pending or verified. Reject the pending payment or keep the original amount.`)}
+  const mk=p=>({collection_id:CID,name:p.n,amount_due:p.amt,sort:P.indexOf(p),meta:{s:p.s,e:p.e,c:p.c||0}});
+  const old=P.filter(p=>p.uid),nw=P.filter(p=>!p.uid);
+  if(old.length){const u=await SB.from('players').upsert(old.map(p=>({id:p.uid,...mk(p)})));if(u.error)throw u.error}
+  if(nw.length){const n=await SB.from('players').insert(nw.map(p=>({...mk(p),payment_status:'pending'}))).select('id,name');if(n.error)throw n.error;nw.forEach(p=>{const m=n.data.find(x=>x.name==p.n);if(m)p.uid=m.id})}
+  const keep=P.map(p=>p.uid),{data:ex}=await SB.from('players').select('id').eq('collection_id',CID),gone=(ex||[]).map(x=>x.id).filter(i=>!keep.includes(i));
+  if(gone.length){const d=await SB.from('players').delete().in('id',gone);if(d.error)throw d.error}
+  save();msg('pmsg','Published ✓ Share: '+link());await loadPay(true);renderMine()
+ }catch(e){msg('pmsg',e.message||'Failed',1)}finally{$('pub1').disabled=false}}
+$('pub1').onclick=publish;
+async function pubInit(){
+ $('org').style.display='none';const V=$('pubv');V.style.display='block';
+ let D=null,me=null,LAST='',key='bsme_'+TOKEN;try{me=localStorage.getItem(key)}catch(e){}
+ const draw=()=>{
+  if(!D){V.innerHTML='<h1>🏸</h1><div class="card">This link is not valid.</div>';return}
+  const u=$('utr')?$('utr').value:'',mp=D.players.find(p=>p.id==me),open=D.status=='open';
+  const q=(a,b)=>`${a}${b}?pa=${encodeURIComponent(D.upi_id)}&pn=${encodeURIComponent(D.payee||'Organizer')}&am=${mp?mp.amount:0}.00&cu=INR&tn=${encodeURIComponent((D.title||'Badminton').slice(0,40)+' - '+(mp?mp.name:''))}`;
+  let h=`<h1>🏸 ${esc(D.title)}</h1><div class="owe">${esc(D.date||'')}${open?'':' · Collection closed'}</div><div class="card"><label>Select your name</label><select id="who"><option value="">- choose -</option>${D.players.map(p=>`<option value="${p.id}" ${p.id==me?'selected':''}>${esc(p.name)}</option>`).join('')}</select>`;
+  if(mp){h+=`<div style="font-size:30px;font-weight:700;color:var(--ac);margin:10px 0">₹${mp.amount}</div>`;
+   if(mp.status=='paid')h+='<div>✅ Paid. Thank you!</div>';
+   else if(open && mp.amount>0){h+=`<div class="row"><a class="btn" href="${esc(q('upi://','pay'))}">Pay via UPI</a><a class="btn g" href="${esc(q('tez://','upi/pay'))}">GPay</a><a class="btn g" href="${esc(q('phonepe://','pay'))}">PhonePe</a><a class="btn g" href="${esc(q('paytmmp://','pay'))}">Paytm</a></div>`+
+    (mp.status=='submitted'?'<div class="owe">⏳ Submitted. Waiting for the organizer to verify.</div>':`<label style="margin-top:12px">After paying, enter the UTR / transaction ID</label><input type="text" id="utr" placeholder="12-digit UTR" autocapitalize="characters"><div class="row"><button id="sub">I’ve paid - submit</button></div>`)+'<div id="m" class="owe"></div>'}else if(open){h+='<div class="owe">No payment due for this player.</div>'}}
+  h+=`</div><div class="card"><label>Everyone</label>${D.players.map(p=>`<div class="pl"><span>${esc(p.name)}</span><span><b>₹${p.amount}</b> <span class="chip">${p.status=='paid'?'✅ Paid':p.status=='submitted'?'⏳ Verifying':'Pending'}</span></span></div>`).join('')}</div>`;
+  V.innerHTML=h;if(u&&$('utr'))$('utr').value=u;
+  $('who').onchange=()=>{me=$('who').value||null;try{localStorage.setItem(key,me||'')}catch(e){}draw()};
+  if($('sub'))$('sub').onclick=async()=>{const {data,error}=await SB.rpc('submit_payment',{p_token:TOKEN,p_player:me,p_utr:$('utr').value});
+   const em={bad_utr:'That does not look like a valid UTR (8-22 letters/digits).',duplicate:'That UTR or a pending payment already exists.',closed_or_invalid:'This collection is closed.',invalid_player:'Player not found.',no_amount_due:'No payment is due for this player.'};
+   if(error||!data||!data.ok)msg('m',error?'Something went wrong.':(em[data.error]||'Failed.'),1);else{LAST='';await load()}}};
+ const load=async()=>{const {data,error}=await SB.rpc('get_public_collection',{p_token:TOKEN});const j=JSON.stringify(error?null:data);if(j!==LAST){LAST=j;D=error?null:data;draw()}};
+ await load();setInterval(()=>{if(!document.hidden)load()},15000)}
+if(TOKEN)pubInit();else{renderAuth();renderDash();if(SB){SB.auth.onAuthStateChange((_e,ss)=>{USER=ss?ss.user:null;setTimeout(()=>{renderAuth();renderMine();if(CID)loadPay(true);else renderDash()},0)});setInterval(()=>{if(USER&&CID&&!document.hidden)loadPay()},20000)}}
+</script></body></html>
