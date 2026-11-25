@@ -116,7 +116,11 @@ $('ac').onclick=()=>{C.push({s:gs(),e:ge()});rc();build()};try{const d=JSON.pars
 
 const link=()=>location.origin+location.pathname+'?c='+TK;
 const msg=(id,t,bad)=>{const e=$(id);if(e){e.textContent=t;e.className='owe'+(bad?' warn':'')}};
-const cp=async(t,b)=>{try{await navigator.clipboard.writeText(t);if(b)b.textContent='Copied ✓'}catch(e){prompt('Copy:',t)}};
+const cp=async(t,b)=>{let ok=false;
+ try{await navigator.clipboard.writeText(t);ok=true}catch(e){}
+ if(!ok){try{const a=document.createElement('textarea');a.value=t;a.setAttribute('readonly','');a.style.cssText='position:fixed;top:0;left:0;opacity:0;font-size:16px';document.body.appendChild(a);a.focus();a.select();a.setSelectionRange(0,t.length);ok=document.execCommand('copy');a.remove()}catch(e){}}
+ if(b)b.textContent=ok?'Copied ✓':'Copy failed - copy it manually';
+ return ok};
 function renderAuth(){const A=$('auth');
  if(!SB){A.innerHTML='<div class="owe warn">Cloud features unavailable (offline). The calculator still works.</div>';return}
  if(USER){A.innerHTML=`<div class="ph"><span style="font-size:14px">Organizer: ${esc(USER.email)}</span><button class="g" id="so">Sign out</button></div>`;$('so').onclick=()=>SB.auth.signOut()}
@@ -137,9 +141,9 @@ async function review(id,ok){const r=await SB.from('payments').update({status:ok
 function renderDash(){const D=$('dash');if(!CID||!USER||!TK){D.style.display='none';return}D.style.display='block';
  const st=p=>{const x=PAY.filter(y=>y.player_id==p.uid);return x.some(y=>y.status=='verified')?'paid':x.some(y=>y.status=='pending')?'submitted':'unpaid'};
  let exp=0,col=0,np=0;P.forEach(p=>{exp+=p.amt||0;if(st(p)=='paid'){col+=p.amt||0;np++}});
- D.innerHTML=`<label>Payment tracker${CST=='closed'?' · CLOSED':''}</label><div class="tot">Players <b>${P.length}</b> · Expected <b>₹${exp}</b><br>Collected <b>₹${col}</b> · Pending <b>₹${exp-col}</b><br>Paid <b>${np}</b> · Pending <b>${P.length-np}</b></div><div class="owe" style="word-break:break-all">${esc(link())}</div><div class="row"><button id="cl">Copy link</button><button class="g" id="cr">Copy pending reminder</button><button class="g" id="rf">Refresh</button><button class="g" id="cs">${CST=='closed'?'Reopen':'Close'}</button></div>`+
+ D.innerHTML=`<label>Payment tracker${CST=='closed'?' · CLOSED':''}</label><div class="tot">Players <b>${P.length}</b> · Expected <b>₹${exp}</b><br>Collected <b>₹${col}</b> · Pending <b>₹${exp-col}</b><br>Paid <b>${np}</b> · Pending <b>${P.length-np}</b></div><div class="owe" style="word-break:break-all">${esc(link())}</div><div class="row"><button id="cplink">Copy link</button><button class="g" id="cr">Copy pending reminder</button><button class="g" id="rf">Refresh</button><button class="g" id="cs">${CST=='closed'?'Reopen':'Close'}</button></div>`+
  P.map(p=>{const pe=PAY.find(y=>y.player_id==p.uid&&y.status=='pending'),s=st(p);return `<div class="pl"><span>${esc(p.n)} · ₹${p.amt||0}</span><span>${s=='paid'?'<span class="chip">✅ Paid</span>':s=='submitted'?`<span class="chip">⏳ ${esc(pe.transaction_reference||'')}</span> <button data-v="${pe.id}">Verify</button> <button class="g" data-j="${pe.id}">Reject</button>`:'<span class="chip">Unpaid</span>'}</span></div>`}).join('');
- $('cl').onclick=e=>cp(link(),e.target);$('rf').onclick=()=>loadPay(true);
+ $('cplink').onclick=e=>cp(link(),e.target);$('rf').onclick=()=>loadPay(true);
  $('cr').onclick=e=>{const u=P.filter(p=>st(p)=='unpaid');cp((u.length?`Pending payments - ${$('ttl').value||'Badminton'}\n${u.map(p=>`${p.n}: ₹${p.amt}`).join('\n')}\nPay here: ${link()}`:'All paid ✅'),e.target)};
  $('cs').onclick=async()=>{const n=CST=='closed'?'open':'closed';const r=await SB.from('collections').update({status:n}).eq('id',CID);if(r.error)alert(r.error.message);else{CST=n;renderDash()}};
  D.querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>review(b.dataset.v,true));D.querySelectorAll('[data-j]').forEach(b=>b.onclick=()=>review(b.dataset.j,false))}
