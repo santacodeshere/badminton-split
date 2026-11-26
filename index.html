@@ -48,6 +48,12 @@ input[type=range]{width:100%;accent-color:var(--ac)}
 <div><label>Date</label><input type="date" id="sdt"></div><div><label>Payee name</label><input type="text" id="pyn"></div>
 <div style="grid-column:1/-1"><label>UPI ID (for the Pay button)</label><input type="text" id="upiid" placeholder="name@okaxis" autocapitalize="none"></div></div>
 <div class="row"><button id="pub1">Create Collection / Publish</button></div><div class="owe" id="pmsg"></div></div>
+<div id="gs2" class="card"><label>Google Sheet sync (updates “Total Collection” for the game date)</label>
+<label style="margin-top:6px">Apps Script web app URL</label><input type="text" id="gsu" placeholder="https://script.google.com/macros/s/.../exec" autocapitalize="none" autocorrect="off">
+<label style="margin-top:8px">Secret (same as in the script)</label><input type="password" id="gss" autocapitalize="none" autocomplete="off">
+<label style="margin-top:8px">Game date (row to update)</label><input type="date" id="gsd">
+<label class="bd" style="font-size:14px;color:var(--tx);margin-top:10px"><input type="checkbox" id="gsa"> Update the sheet automatically when I tick Paid</label>
+<div class="row"><button id="gsn">Sync now</button></div><div class="owe" id="gsm"></div></div>
 <div id="dash" class="card" style="display:none"></div>
 <div id="mine" class="card" style="display:none"></div>
 </div>
@@ -73,7 +79,7 @@ function build(){
  <div class="sl"><span>In</span><input type="range" min="${lo}" max="${hi}" step="5" value="${p.s}" data-i="${i}" data-k="s"><b id="s${i}"></b></div>
  <div class="sl"><span>Out</span><input type="range" min="${lo}" max="${hi}" step="5" value="${p.e}" data-i="${i}" data-k="e"><b id="e${i}"></b></div>
  <div class="owe" id="o${i}"></div></div>`).join('');
- L.querySelectorAll('input').forEach(r=>r.oninput=()=>{const p=P[r.dataset.i];p[r.dataset.k]=+r.value;if(p.e<=p.s){if(r.dataset.k=='s')p.e=p.s+5;else p.s=p.e-5;build();return}calc()});
+ L.querySelectorAll('input[type=range]').forEach(r=>r.oninput=()=>{const p=P[r.dataset.i];p[r.dataset.k]=+r.value;if(p.e<=p.s){if(r.dataset.k=='s')p.e=p.s+5;else p.s=p.e-5;build();return}calc()});
  L.querySelectorAll('[data-pd]').forEach(x=>x.onchange=()=>setPaid(+x.dataset.pd,x.checked));
  L.querySelectorAll('[data-d2]').forEach(x=>x.onchange=()=>{P[x.dataset.d2].d=x.checked;calc()});
  L.querySelectorAll('select').forEach(s=>s.onchange=()=>{P[s.dataset.c].c=+s.value;calc()});
@@ -131,13 +137,13 @@ async function loadPay(force){if(!SB||!USER||!CID)return;
  const {data,error}=await SB.from('payments').select('*, players!inner(collection_id)').eq('players.collection_id',CID);if(error)return;
  const j=JSON.stringify(data);if(j===LASTPAY&&!force)return;LASTPAY=j;PAY=data||[];
  P.forEach(p=>{p.pd=!!p.uid&&PAY.some(x=>x.player_id==p.uid&&x.status=='verified')});build();renderDash()}
-async function setPaid(i,v){const p=P[i];if(!SB||!USER||!CID||!p.uid){p.pd=v;calc();return}
+async function setPaid(i,v){const p=P[i];if(!SB||!USER||!CID||!p.uid){p.pd=v;calc();shAuto();return}
  if(v&&p.amt<=0){alert('This player has no amount due.');p.pd=false;calc();return}
  const ex=PAY.find(x=>x.player_id==p.uid&&(x.status=='pending'||x.status=='verified'));let r;const now=new Date().toISOString();
  if(v)r=ex?await SB.from('payments').update({status:'verified',verified_at:now}).eq('id',ex.id):await SB.from('payments').insert({player_id:p.uid,amount:p.amt,method:'upi',status:'verified',source:'organizer',verified_at:now});
  else if(ex)r=await SB.from('payments').update({status:'rejected'}).eq('id',ex.id);
- if(r&&r.error)alert(r.error.message);await loadPay(true)}
-async function review(id,ok){const r=await SB.from('payments').update({status:ok?'verified':'rejected',verified_at:ok?new Date().toISOString():null}).eq('id',id);if(r.error)alert(r.error.message);await loadPay(true)}
+ if(r&&r.error)alert(r.error.message);await loadPay(true);shAuto()}
+async function review(id,ok){const r=await SB.from('payments').update({status:ok?'verified':'rejected',verified_at:ok?new Date().toISOString():null}).eq('id',id);if(r.error)alert(r.error.message);await loadPay(true);shAuto()}
 function renderDash(){const D=$('dash');if(!CID||!USER||!TK){D.style.display='none';return}D.style.display='block';
  const st=p=>{const x=PAY.filter(y=>y.player_id==p.uid);return x.some(y=>y.status=='verified')?'paid':x.some(y=>y.status=='pending')?'submitted':'unpaid'};
  let exp=0,col=0,np=0;P.forEach(p=>{exp+=p.amt||0;if(st(p)=='paid'){col+=p.amt||0;np++}});
@@ -200,5 +206,24 @@ async function pubInit(){
    if(error||!data||!data.ok)msg('m',error?'Something went wrong.':(em[data.error]||'Failed.'),1);else{LAST='';await load()}}};
  const load=async()=>{const {data,error}=await SB.rpc('get_public_collection',{p_token:TOKEN});const j=JSON.stringify(error?null:data);if(j!==LAST){LAST=j;D=error?null:data;draw()}};
  await load();setInterval(()=>{if(!document.hidden)load()},15000)}
+const SHC=(()=>{try{return JSON.parse(localStorage.getItem('bsheet')||'{}')}catch(e){return {}}})();
+$('gsu').value=SHC.u||'';$('gss').value=SHC.s||'';$('gsd').value=SHC.d||new Date().toLocaleDateString('en-CA');$('gsa').checked=!!SHC.a;
+const shSave=()=>{try{localStorage.setItem('bsheet',JSON.stringify({u:$('gsu').value.trim(),s:$('gss').value,d:$('gsd').value,a:$('gsa').checked}))}catch(e){}};
+['gsu','gss','gsd','gsa'].forEach(id=>$(id).onchange=shSave);['gsu','gss'].forEach(id=>$(id).oninput=shSave);
+let shT=null;
+function shAuto(){if($('gsa').checked)shSync(false)}
+function shSync(manual){clearTimeout(shT);
+ shT=setTimeout(async()=>{
+  const u=$('gsu').value.trim(),d=$('gsd').value;shSave();
+  if(!u||!d){if(manual)msg('gsm','Add the web app URL and the game date first.',1);return}
+  const total=P.reduce((x,p)=>x+(p.pd?(p.amt||0):0),0);msg('gsm','Updating sheet…');
+  try{
+   const r=await fetch(u,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({secret:$('gss').value,date:d,total})});
+   const j=await r.json();
+   if(j.ok)msg('gsm','Sheet updated ✓ '+d+' → ₹'+total);
+   else msg('gsm','Sheet says: '+(j.error==='unauthorized'?'wrong secret':j.error==='date_not_found'?'that date is not in the sheet':j.error),1)
+  }catch(e){msg('gsm','Sent, but I could not read the reply. Check the sheet.',1)}
+ },manual?0:700)}
+$('gsn').onclick=()=>shSync(true);
 if(TOKEN)pubInit();else{renderAuth();renderDash();if(SB){SB.auth.onAuthStateChange((_e,ss)=>{USER=ss?ss.user:null;setTimeout(()=>{renderAuth();renderMine();if(CID)loadPay(true);else renderDash()},0)});setInterval(()=>{if(USER&&CID&&!document.hidden)loadPay()},20000)}}
 </script></body></html>
