@@ -41,6 +41,7 @@ input[type=range]{width:100%;accent-color:var(--ac)}
 <div class="card"><label>Paste player names (one per line, from Playo)</label>
 <textarea id="names" placeholder="Rahul&#10;Priya&#10;Arjun"></textarea>
 <div class="row"><button id="add">Add players</button><button class="g" id="clr">Clear all</button></div></div>
+<div class="card"><label>Community members (not charged; they count only if you tick Paid) - one name per line</label><textarea id="exn" style="min-height:64px" placeholder="Exactly as the name appears in the list"></textarea></div>
 <div id="list" class="card" style="display:none"></div>
 <div id="res" class="card" style="display:none"></div>
 <div id="pb" class="card"><label>Publish for payment collection</label>
@@ -65,6 +66,10 @@ const SB=window.supabase?window.supabase.createClient(SB_URL,SB_KEY):null;
 const TOKEN=new URLSearchParams(location.search).get('c');
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 let CID=null,TK=null,CST='open',PAY=[],USER=null,LASTPAY='';
+let EXL=new Set();const nk=n=>String(n).trim().toLowerCase().replace(/\s+/g,' ');
+const isEx=n=>EXL.has(nk(n));const exRead=()=>{EXL=new Set($('exn').value.split('\n').map(nk).filter(Boolean))};
+try{$('exn').value=localStorage.getItem('bsex')||''}catch(e){}exRead();
+$('exn').oninput=()=>{exRead();try{localStorage.setItem('bsex',$('exn').value)}catch(e){}calc()};
 const tm=s=>{const[a,b]=s.split(':').map(Number);return a*60+b};
 const fmt=m=>{m=Math.round(m);let h=Math.floor(m/60)%24,mi=m%60,ap=h>=12?'PM':'AM';h=h%12||12;return h+':'+String(mi).padStart(2,'0')+' '+ap};
 let P=[],DET=false,C=[{s:450,e:540}],pg=450,pe=540;const hm=m=>String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');
@@ -94,13 +99,13 @@ function calc(){save();
  const c=P.map(()=>0);let court=0;const mins=C.reduce((x,k)=>x+k.e-k.s,0);
  for(let t=a;t<b;t+=5){const nA=C.filter(k=>k.s<=t&&t<k.e).length,cost=rate/60*5*nA;court+=cost;const on=P.map((p,i)=>p.s<=t&&t<p.e?i:-1).filter(i=>i>=0);
   {const pc=rate/60*5;let pool=0;C.forEach((k,ci)=>{if(!(k.s<=t&&t<k.e))return;const who=on.filter(i=>P[i].c==ci+1);if(who.length)who.forEach(i=>c[i]+=pc/who.length);else pool+=pc});if(pool){let r=on.filter(i=>!P[i].c);if(!r.length)r=on;if(!r.length)r=P.map((_,i)=>i);r.forEach(i=>c[i]+=pool/r.length)}}}
- let paid=0,pend=[],sum=0,txt=`🏸 Badminton ${fmt(gs())}–${fmt(ge())}${C.length>1?` (${C.length} courts)`:''}\n`;
+ let paid=0,paidNE=0,exN=0,pend=[],sum=0,txt=`🏸 Badminton ${fmt(gs())}–${fmt(ge())}${C.length>1?` (${C.length} courts)`:''}\n`;
  P.forEach((p,i)=>{$('s'+i).textContent=fmt(p.s);$('e'+i).textContent=fmt(p.e);
-  const tot=Math.ceil(c[i]+sh);p.amt=tot;sum+=tot;if(p.pd)paid+=tot;else pend.push(`${p.n}: ₹${tot}`);
-  const ct=tot-sh;$('o'+i).innerHTML=`Court ₹${ct} + Shuttle ₹${sh} → <b>₹${tot}</b>${p.pd?' ✅ paid':''}`;
-  txt+=p.d?`${p.n}: ₹${tot} (court ₹${ct}${p.c?` on Court ${p.c}`:''} for ${fmt(p.s)}–${fmt(p.e)} with ${P.filter(q=>q.s==p.s&&q.e==p.e&&q.c==p.c).length} player(s) + shuttle ₹${sh})\n`:`${p.n}: ₹${tot}\n`});
+  const tot=Math.ceil(c[i]+sh);p.amt=tot;const ex=isEx(p.n);p.ex=ex;if(ex)exN++;else sum+=tot;if(p.pd){paid+=tot;if(!ex)paidNE+=tot}else if(!ex)pend.push(`${p.n}: ₹${tot}`);
+  const ct=tot-sh;$('o'+i).innerHTML=`Court ₹${ct} + Shuttle ₹${sh} → <b>₹${tot}</b>${p.pd?' ✅ paid':''}${p.ex&&!p.pd?' · community, not collected':''}`;
+  if(!ex||p.pd)txt+=p.d?`${p.n}: ₹${tot} (court ₹${ct}${p.c?` on Court ${p.c}`:''} for ${fmt(p.s)}–${fmt(p.e)} with ${P.filter(q=>q.s==p.s&&q.e==p.e&&q.c==p.c).length} player(s) + shuttle ₹${sh})\n`:`${p.n}: ₹${tot}\n`});
  
- R.innerHTML=`<div class="tot">Court <b>₹${court.toFixed(0)}</b> (${(mins/60).toFixed(2)} court-hrs, ${C.length} court${C.length>1?'s':''}) · Shuttles <b>₹${sh*P.length}</b><br>To collect: <b style="font-size:20px">₹${sum}</b> from ${P.length} players<br>Paid <b>₹${paid}</b> · Pending <b>₹${sum-paid}</b> (${pend.length} left)</div><label style="margin-top:10px;display:flex;gap:8px;align-items:center;font-size:14px;color:var(--tx)"><input type="checkbox" id="det" ${P.every(p=>p.d)?'checked':''}> Breakdown for everyone</label><div class="row"><button id="cp">Copy summary</button><button class="g" id="cp2">Copy explanation</button><button class="g" id="cp3">Copy pending</button><button class="g" id="full">Everyone full game</button></div>`;
+ R.innerHTML=`<div class="tot">Court <b>₹${court.toFixed(0)}</b> (${(mins/60).toFixed(2)} court-hrs, ${C.length} court${C.length>1?'s':''}) · Shuttles <b>₹${sh*P.length}</b><br>To collect: <b style="font-size:20px">₹${sum+paid-paidNE}</b> from ${P.length-exN} players${exN?` (+${exN} community, not collected)`:''}<br>Paid <b>₹${paid}</b> · Pending <b>₹${sum-paidNE}</b> (${pend.length} left)</div><label style="margin-top:10px;display:flex;gap:8px;align-items:center;font-size:14px;color:var(--tx)"><input type="checkbox" id="det" ${P.every(p=>p.d)?'checked':''}> Breakdown for everyone</label><div class="row"><button id="cp">Copy summary</button><button class="g" id="cp2">Copy explanation</button><button class="g" id="cp3">Copy pending</button><button class="g" id="full">Everyone full game</button></div>`;
  $('det').onchange=()=>{P.forEach(p=>p.d=$('det').checked);build()};$('cp2').onclick=async()=>{const x=ex(c,sh,rate,court,mins);try{await navigator.clipboard.writeText(x);$('cp2').textContent='Copied ✓'}catch(e){prompt('Copy:',x)}};$('cp3').onclick=async()=>{const x=(pend.length?`Pending payments 🏸\n${pend.join('\n')}`:'All paid ✅')+($('upi').value?`\nPay to: ${$('upi').value}`:'');try{await navigator.clipboard.writeText(x);$('cp3').textContent='Copied ✓'}catch(e){prompt('Copy:',x)}};$('cp').onclick=async()=>{try{await navigator.clipboard.writeText(txt+($('upi').value?'\nPay to: '+$('upi').value:''));$('cp').textContent='Copied ✓'}catch(e){prompt('Copy:',txt)}};
  $('full').onclick=()=>{P.forEach(p=>{p.s=gs();p.e=ge()});build()};
 }
